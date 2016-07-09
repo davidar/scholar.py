@@ -185,12 +185,14 @@ except ImportError:
 
 # Support unicode in both Python 2 and 3. In Python 3, unicode is str.
 if sys.version_info[0] == 3:
-    unicode = str # pylint: disable-msg=W0622
-    encode = lambda s: unicode(s) # pylint: disable-msg=C0103
+    unicode = str                     # pylint: disable-msg=W0622
+
+    def encode(s):
+        return unicode(s)             # pylint: disable-msg=C0103
 else:
     def encode(s):
         if isinstance(s, basestring):
-            return s.encode('utf-8') # pylint: disable-msg=C0103
+            return s.encode('utf-8')  # pylint: disable-msg=C0103
         else:
             return str(s)
 
@@ -212,7 +214,7 @@ class ScholarConf(object):
 
     VERSION = '2.10'
     LOG_LEVEL = 1
-    MAX_PAGE_RESULTS = 20 # Current maximum for per-page results
+    MAX_PAGE_RESULTS = 20  # Current maximum for per-page results
     SCHOLAR_SITE = 'http://scholar.google.com'
 
     # USER_AGENT = 'Mozilla/5.0 (X11; U; FreeBSD i386; en-US; rv:1.9.2.9) Gecko/20100913 Firefox/3.6.9'
@@ -222,6 +224,7 @@ class ScholarConf(object):
     # If set, we will use this file to read/save cookies to enable
     # cookie use across sessions.
     COOKIE_JAR_FILE = None
+
 
 class ScholarUtils(object):
     """A wrapper for various utensils that come in handy."""
@@ -310,7 +313,7 @@ class ScholarArticle(object):
 
     def as_csv(self, header=False, sep='|'):
         # Get keys sorted in specified order:
-        keys = [pair[0] for pair in \
+        keys = [pair[0] for pair in
                 sorted([(key, val[2]) for key, val in list(self.attrs.items())],
                        key=lambda pair: pair[1])]
         res = []
@@ -455,7 +458,6 @@ class ScholarArticleParser(object):
 
             if tag.getText().startswith('Import'):
                 self.article['url_citation'] = self._path2url(tag.get('href'))
-
 
     @staticmethod
     def _tag_has_class(tag, klass):
@@ -730,12 +732,12 @@ class SearchScholarQuery(ScholarQuery):
     def __init__(self):
         ScholarQuery.__init__(self)
         self._add_attribute_type('num_results', 'Results', 0)
-        self.words = None # The default search behavior
-        self.words_some = None # At least one of those words
-        self.words_none = None # None of these words
+        self.words = None         # The default search behavior
+        self.words_some = None    # At least one of those words
+        self.words_none = None    # None of these words
         self.phrase = None
-        self.scope_title = False # If True, search in title only
-        self.author = None 
+        self.scope_title = False  # If True, search in title only
+        self.author = None
         self.pub = None
         self.timeframe = [None, None]
         self.include_patents = True
@@ -842,14 +844,14 @@ class ScholarSettings(object):
     CITFORM_BIBTEX = 4
 
     def __init__(self):
-        self.citform = 0 # Citation format, default none
+        self.citform = 0  # Citation format, default none
         self.per_page_results = ScholarConf.MAX_PAGE_RESULTS
         self._is_configured = False
 
     def set_citation_format(self, citform):
         citform = ScholarUtils.ensure_int(citform)
         if citform < 0 or citform > self.CITFORM_BIBTEX:
-            raise FormatError('citation format invalid, is "%s"' \
+            raise FormatError('citation format invalid, is "%s"'
                               % citform)
         self.citform = citform
         self._is_configured = True
@@ -918,10 +920,10 @@ class ScholarQuerier(object):
                 ScholarUtils.log('info', 'loaded cookies file')
             except Exception as msg:
                 ScholarUtils.log('warn', 'could not load cookies file: %s' % msg)
-                self.cjar = MozillaCookieJar() # Just to be safe
+                self.cjar = MozillaCookieJar()  # Just to be safe
 
         self.opener = build_opener(HTTPCookieProcessor(self.cjar))
-        self.settings = None # Last settings object, if any
+        self.settings = None  # Last settings object, if any
 
     def apply_settings(self, settings):
         """
@@ -952,7 +954,7 @@ class ScholarQuerier(object):
             ScholarUtils.log('info', 'parsing settings failed: no form')
             return False
 
-        tag = tag.find('input', attrs={'type':'hidden', 'name':'scisig'})
+        tag = tag.find('input', attrs={'type': 'hidden', 'name': 'scisig'})
         if tag is None:
             ScholarUtils.log('info', 'parsing settings failed: scisig')
             return False
@@ -1059,12 +1061,12 @@ class ScholarQuerier(object):
             html = hdl.read()
 
             ScholarUtils.log('debug', log_msg)
-            ScholarUtils.log('debug', '>>>>' + '-'*68)
+            ScholarUtils.log('debug', '>>>>' + '-' * 68)
             ScholarUtils.log('debug', 'url: %s' % hdl.geturl())
             ScholarUtils.log('debug', 'result: %s' % hdl.getcode())
             ScholarUtils.log('debug', 'headers:\n' + str(hdl.info()))
-            ScholarUtils.log('debug', 'data:\n' + html.decode('utf-8')) # For Python 3
-            ScholarUtils.log('debug', '<<<<' + '-'*68)
+            ScholarUtils.log('debug', 'data:\n' + html.decode('utf-8'))  # For Python 3
+            ScholarUtils.log('debug', '<<<<' + '-' * 68)
 
             return html
         except Exception as err:
@@ -1086,7 +1088,7 @@ def txt(querier, with_globals):
         items = sorted(list(querier.query.attrs.values()), key=lambda item: item[2])
         # Find largest label length:
         max_label_len = max([len(str(item[1])) for item in items] + [max_label_len])
-        fmt = '[G] %%%ds %%s' % max(0, max_label_len-4)
+        fmt = '[G] %%%ds %%s' % max(0, max_label_len - 4)
         for item in items:
             if item[0] is not None:
                 print(fmt % (item[1], item[0]))
@@ -1097,12 +1099,14 @@ def txt(querier, with_globals):
     for art in articles:
         print(encode(art.as_txt()) + '\n')
 
+
 def csv(querier, header=False, sep='|'):
     articles = querier.articles
     for art in articles:
         result = art.as_csv(header=header, sep=sep)
         print(encode(result))
         header = False
+
 
 def citation_export(querier):
     articles = querier.articles
@@ -1135,7 +1139,8 @@ scholar.py -c 5 -a "albert einstein" -t --none "quantum theory" --after 1970"""
     group.add_option('-A', '--all', metavar='WORDS', default=None, dest='allw',
                      help='Results must contain all of these words')
     group.add_option('-s', '--some', metavar='WORDS', default=None,
-                     help='Results must contain at least one of these words. Pass arguments in form -s "foo bar baz" for simple words, and -s "a phrase, another phrase" for phrases')
+                     help='Results must contain at least one of these words. Pass arguments in form -s '
+                          '"foo bar baz" for simple words, and -s "a phrase, another phrase" for phrases')
     group.add_option('-n', '--none', metavar='WORDS', default=None,
                      help='Results must contain none of these words. See -s|--some re. formatting')
     group.add_option('-p', '--phrase', metavar='PHRASE', default=None,
@@ -1169,12 +1174,14 @@ scholar.py -c 5 -a "albert einstein" -t --none "quantum theory" --after 1970"""
     group.add_option('--csv-header', action='store_true',
                      help='Like --csv, but print header with column names')
     group.add_option('--citation', metavar='FORMAT', default=None,
-                     help='Print article details in standard citation format. Argument Must be one of "bt" (BibTeX), "en" (EndNote), "rm" (RefMan), or "rw" (RefWorks).')
+                     help='Print article details in standard citation format. Argument Must be one of '
+                          '"bt" (BibTeX), "en" (EndNote), "rm" (RefMan), or "rw" (RefWorks).')
     parser.add_option_group(group)
 
     group = optparse.OptionGroup(parser, 'Miscellaneous')
     group.add_option('--cookie-file', metavar='FILE', default=None,
-                     help='File to use for cookie storage. If given, will read any existing cookies if found at startup, and save resulting cookies in the end.')
+                     help='File to use for cookie storage. If given, will read any existing cookies '
+                          'if found at startup, and save resulting cookies in the end.')
     group.add_option('-d', '--debug', action='count', default=0,
                      help='Enable verbose logging to stderr. Repeated options increase detail of debug output.')
     group.add_option('-v', '--version', action='store_true', default=False,
